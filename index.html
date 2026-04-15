@@ -43,12 +43,31 @@
             text-decoration: underline;
         }
 
+        /* Edit and Delete Buttons */
+        .action-btn {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .action-btn:hover {
+            background-color: #e68900;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
         /* Footer Styling */
         footer {
             background-color: #4CAF50;
-            color: rgb(255, 255, 255);
+            color: white;
             text-align: center;
-            padding: 8px;
+            padding: 10px;
             position: fixed;
             width: 100%;
             bottom: 0;
@@ -67,6 +86,7 @@
                 <th>Duration (Months)</th>
                 <th>Expiry Date</th>
                 <th>Days Remaining</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -82,7 +102,8 @@
             const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
             const tableBody = document.querySelector("#subscriptionTable tbody");
             tableBody.innerHTML = "";
-            subscriptions.forEach((subscription) => {
+
+            subscriptions.forEach((subscription, index) => {
                 const expiryDate = new Date(subscription.expiryDate);
                 const today = new Date();
                 const daysRemaining = Math.max(Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24)), 0);
@@ -94,9 +115,96 @@
                     <td>${subscription.duration}</td>
                     <td>${subscription.expiryDate}</td>
                     <td>${daysRemaining}</td>
+                    <td>
+                        <button class="action-btn" onclick="editSubscription(${index})">Edit</button>
+                        <button class="action-btn delete-btn" onclick="deleteSubscription(${index})">Delete</button>
+                    </td>
                 `;
                 tableBody.appendChild(row);
             });
+        }
+
+        // Function to edit a subscription
+        function editSubscription(index) {
+            const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
+            const subscription = subscriptions[index];
+
+            // Populate the form fields with the selected subscription's details
+            document.getElementById("userName").value = subscription.userName;
+            document.getElementById("subscriptionDate").value = subscription.subscriptionDate;
+            document.getElementById("subscriptionDuration").value = subscription.duration;
+
+            // Change the "Add Subscription" button to "Update Subscription"
+            const button = document.querySelector("button");
+            button.textContent = "Update Subscription";
+
+            // Change the button action to update the subscription
+            button.onclick = function() {
+                updateSubscription(index);
+            };
+        }
+
+        // Function to update a subscription
+        function updateSubscription(index) {
+            const userName = document.getElementById("userName").value;
+            const subscriptionDate = document.getElementById("subscriptionDate").value;
+            const subscriptionDuration = parseInt(document.getElementById("subscriptionDuration").value, 10);
+            
+            if (userName && subscriptionDate && subscriptionDuration > 0) {
+                const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
+
+                // Format the subscription date to day, month date, year (e.g., Monday, 15 April 2026)
+                const formattedDate = new Date(subscriptionDate);
+                const formattedDateString = formattedDate.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+
+                // Calculate the expiry date by adding months to the subscription date
+                const expiryDate = new Date(formattedDate);
+                expiryDate.setMonth(expiryDate.getMonth() + subscriptionDuration);
+
+                // Format expiry date in the same format
+                const formattedExpiryDateString = expiryDate.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+
+                // Update the subscription details
+                subscriptions[index] = { 
+                    userName, 
+                    subscriptionDate: formattedDateString, 
+                    duration: subscriptionDuration, 
+                    expiryDate: formattedExpiryDateString 
+                };
+
+                localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+
+                // Reset the form and button
+                document.getElementById("userName").value = "";
+                document.getElementById("subscriptionDate").value = "";
+                document.getElementById("subscriptionDuration").value = "";
+                document.querySelector("button").textContent = "Add Subscription";
+
+                // Reload the subscriptions in the table
+                loadSubscriptions();
+            } else {
+                alert("Please fill out all fields correctly.");
+            }
+        }
+
+        // Function to delete a subscription
+        function deleteSubscription(index) {
+            const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
+            subscriptions.splice(index, 1); // Remove the subscription at the given index
+            localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+
+            // Reload the subscriptions in the table
+            loadSubscriptions();
         }
 
         // Load subscriptions when the page loads
