@@ -132,94 +132,73 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
 
-    <script>
+    <script type="module">
         // Firebase configuration
-        var firebaseConfig = {
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
             apiKey: "your-api-key",
-            authDomain: "your-project-id.firebaseapp.com",
-            databaseURL: "https://your-project-id.firebaseio.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project-id.appspot.com",
-            messagingSenderId: "your-sender-id",
-            appId: "your-app-id"
+            authDomain: "premium-vpn-8fbbb.firebaseapp.com",
+            databaseURL: "https://premium-vpn-8fbbb-default-rtdb.firebaseio.com",
+            projectId: "premium-vpn-8fbbb",
+            storageBucket: "premium-vpn-8fbbb.appspot.com",
+            messagingSenderId: "399953657460",
+            appId: "1:399953657460:web:5731e9396cd8b7d6665b21",
+            measurementId: "G-PH7436XLD2"
         };
 
-        function isFirebaseConfigured() {
-            return firebaseConfig.projectId && !firebaseConfig.projectId.includes('your-project-id');
-        }
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        if (isFirebaseConfigured() && window.firebase) {
-            firebase.initializeApp(firebaseConfig);
-        }
-
-        const db = isFirebaseConfigured() && window.firebase ? firebase.firestore() : null;
-        const localSubscriptionsKey = "vpnSubscriptions";
-
-        function calculateExpiryDate(startDate, durationMonths) {
-            const date = new Date(startDate);
-            date.setMonth(date.getMonth() + parseInt(durationMonths, 10));
-            return date.toISOString().split('T')[0];
-        }
-
-        function calculateDaysRemaining(expiryDate) {
-            const today = new Date();
-            const expiry = new Date(expiryDate);
-            const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-            return diff >= 0 ? diff : 0;
-        }
-
-        function saveSubscriptionLocally(subscription) {
-            const existing = JSON.parse(localStorage.getItem(localSubscriptionsKey) || '[]');
-            existing.push(subscription);
-            localStorage.setItem(localSubscriptionsKey, JSON.stringify(existing));
-        }
-
-        function clearForm() {
-            document.getElementById("userName").value = "";
-            document.getElementById("subscriptionDate").value = "";
-            document.getElementById("subscriptionDuration").value = "";
-        }
-
-        function addSubscription() {
+        // Function to add a subscription to Firestore
+        window.addSubscription = async function() {
             const userName = document.getElementById("userName").value.trim();
             const subscriptionDate = document.getElementById("subscriptionDate").value;
             const subscriptionDuration = document.getElementById("subscriptionDuration").value;
 
+            // Log data for debugging
             console.log("Adding Subscription:", userName, subscriptionDate, subscriptionDuration);
 
+            // Check if the form fields are filled
             if (!userName || !subscriptionDate || !subscriptionDuration) {
                 alert("Please fill out all fields.");
                 return;
             }
 
-            const subscription = {
-                userName,
-                subscriptionDate,
-                subscriptionDuration,
-                expiryDate: calculateExpiryDate(subscriptionDate, subscriptionDuration),
-                daysRemaining: calculateDaysRemaining(calculateExpiryDate(subscriptionDate, subscriptionDuration))
-            };
+            try {
+                // Calculate expiry date
+                const date = new Date(subscriptionDate);
+                date.setMonth(date.getMonth() + parseInt(subscriptionDuration, 10));
+                const expiryDate = date.toISOString().split('T')[0];
 
-            if (db) {
-                db.collection("subscriptions").add(subscription)
-                .then(function(docRef) {
-                    console.log("Subscription added with ID:", docRef.id);
-                    alert("Subscription Added!");
-                    clearForm();
-                })
-                .catch(function(error) {
-                    console.error("Error adding document:", error);
-                    alert("Unable to add subscription. Check the console for details.");
+                // Calculate days remaining
+                const today = new Date();
+                const diff = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+                const daysRemaining = diff >= 0 ? diff : 0;
+
+                // Add subscription to Firestore
+                const docRef = await addDoc(collection(db, "subscriptions"), {
+                    userName: userName,
+                    subscriptionDate: subscriptionDate,
+                    subscriptionDuration: subscriptionDuration,
+                    expiryDate: expiryDate,
+                    daysRemaining: daysRemaining
                 });
-            } else {
-                saveSubscriptionLocally(subscription);
-                alert("Subscription added locally. Configure Firebase to save to Firestore.");
-                clearForm();
+                console.log("Subscription added with ID: ", docRef.id);
+                alert("Subscription Added!");
+                document.getElementById("userName").value = "";
+                document.getElementById("subscriptionDate").value = "";
+                document.getElementById("subscriptionDuration").value = "";
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("Error adding subscription: " + error.message);
             }
-        }
+        };
     </script>
 
     <!-- Footer Section -->
