@@ -147,38 +147,77 @@
             appId: "your-app-id"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        function isFirebaseConfigured() {
+            return firebaseConfig.projectId && !firebaseConfig.projectId.includes('your-project-id');
+        }
 
-        // Function to add a subscription to Firestore
+        if (isFirebaseConfigured() && window.firebase) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const db = isFirebaseConfigured() && window.firebase ? firebase.firestore() : null;
+        const localSubscriptionsKey = "vpnSubscriptions";
+
+        function calculateExpiryDate(startDate, durationMonths) {
+            const date = new Date(startDate);
+            date.setMonth(date.getMonth() + parseInt(durationMonths, 10));
+            return date.toISOString().split('T')[0];
+        }
+
+        function calculateDaysRemaining(expiryDate) {
+            const today = new Date();
+            const expiry = new Date(expiryDate);
+            const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+            return diff >= 0 ? diff : 0;
+        }
+
+        function saveSubscriptionLocally(subscription) {
+            const existing = JSON.parse(localStorage.getItem(localSubscriptionsKey) || '[]');
+            existing.push(subscription);
+            localStorage.setItem(localSubscriptionsKey, JSON.stringify(existing));
+        }
+
+        function clearForm() {
+            document.getElementById("userName").value = "";
+            document.getElementById("subscriptionDate").value = "";
+            document.getElementById("subscriptionDuration").value = "";
+        }
+
         function addSubscription() {
-            const userName = document.getElementById("userName").value;
+            const userName = document.getElementById("userName").value.trim();
             const subscriptionDate = document.getElementById("subscriptionDate").value;
             const subscriptionDuration = document.getElementById("subscriptionDuration").value;
 
-            // Log data for debugging
             console.log("Adding Subscription:", userName, subscriptionDate, subscriptionDuration);
 
-            // Check if the form fields are filled
-            if (userName && subscriptionDate && subscriptionDuration) {
-                db.collection("subscriptions").add({
-                    userName: userName,
-                    subscriptionDate: subscriptionDate,
-                    subscriptionDuration: subscriptionDuration
-                })
+            if (!userName || !subscriptionDate || !subscriptionDuration) {
+                alert("Please fill out all fields.");
+                return;
+            }
+
+            const subscription = {
+                userName,
+                subscriptionDate,
+                subscriptionDuration,
+                expiryDate: calculateExpiryDate(subscriptionDate, subscriptionDuration),
+                daysRemaining: calculateDaysRemaining(calculateExpiryDate(subscriptionDate, subscriptionDuration))
+            };
+
+            if (db) {
+                db.collection("subscriptions").add(subscription)
                 .then(function(docRef) {
-                    console.log("Subscription added with ID: ", docRef.id);
+                    console.log("Subscription added with ID:", docRef.id);
                     alert("Subscription Added!");
-                    document.getElementById("userName").value = "";
-                    document.getElementById("subscriptionDate").value = "";
-                    document.getElementById("subscriptionDuration").value = "";
+                    clearForm();
                 })
                 .catch(function(error) {
-                    console.error("Error adding document: ", error);
+                    console.error("Error adding document:", error);
+                    alert("Unable to add subscription. Check the console for details.");
                 });
             } else {
-                alert("Please fill out all fields.");
+                saveSubscriptionLocally(subscription);
+                alert("Subscription added locally. Configure Firebase to save to Firestore.");
+                clearForm();
             }
         }
     </script>

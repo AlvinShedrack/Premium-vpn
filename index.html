@@ -140,6 +140,10 @@
     <!-- Dark Mode Toggle Button -->
     <button class="dark-mode-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-firestore.js"></script>
+
     <script>
         // Firebase configuration (use your own config)
         var firebaseConfig = {
@@ -152,37 +156,96 @@
             appId: "your-app-id"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        function isFirebaseConfigured() {
+            return firebaseConfig.projectId && !firebaseConfig.projectId.includes('your-project-id');
+        }
 
-        // Function to load subscriptions from Firestore
-        window.loadSubscriptions = async function() {
-            const querySnapshot = await getDocs(collection(db, "subscriptions"));
+        if (isFirebaseConfigured() && window.firebase) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const db = isFirebaseConfigured() && window.firebase ? firebase.firestore() : null;
+        const localSubscriptionsKey = "vpnSubscriptions";
+
+        function getStoredSubscriptions() {
+            return JSON.parse(localStorage.getItem(localSubscriptionsKey) || '[]');
+        }
+
+        function saveStoredSubscriptions(subscriptions) {
+            localStorage.setItem(localSubscriptionsKey, JSON.stringify(subscriptions));
+        }
+
+        function calculateDaysRemaining(expiryDate) {
+            const today = new Date();
+            const expiry = new Date(expiryDate);
+            const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+            return diff >= 0 ? diff : 0;
+        }
+
+        function renderSubscriptions(subscriptions, isLocal) {
             const tableBody = document.querySelector("#subscriptionTable tbody");
             tableBody.innerHTML = "";
 
-            querySnapshot.forEach((doc) => {
-                const subscription = doc.data();
+            subscriptions.forEach((subscription, index) => {
                 const row = document.createElement("tr");
+                const actions = isLocal
+                    ? `
+                        <button onclick="editSubscriptionLocal(${index})">Edit</button>
+                        <button onclick="extendSubscriptionLocal(${index})">Extend</button>
+                        <button onclick="deleteSubscriptionLocal(${index})">Delete</button>
+                    `
+                    : `
+                        <button onclick="editSubscription('${subscription.id}')">Edit</button>
+                        <button onclick="extendSubscription('${subscription.id}')">Extend</button>
+                        <button onclick="deleteSubscription('${subscription.id}')">Delete</button>
+                    `;
+
                 row.innerHTML = `
-                    <td>${subscription.userName}</td>
-                    <td>${subscription.subscriptionDate}</td>
-                    <td>${subscription.subscriptionDuration}</td>
-                    <td>${subscription.expiryDate}</td>
-                    <td>${subscription.daysRemaining}</td>
-                    <td>
-                        <button onclick="editSubscription('${doc.id}')">Edit</button>
-                        <button onclick="extendSubscription('${doc.id}')">Extend</button>
-                        <button onclick="deleteSubscription('${doc.id}')">Delete</button>
-                    </td>
+                    <td>${subscription.userName || ''}</td>
+                    <td>${subscription.subscriptionDate || ''}</td>
+                    <td>${subscription.subscriptionDuration || ''}</td>
+                    <td>${subscription.expiryDate || ''}</td>
+                    <td>${subscription.daysRemaining != null ? subscription.daysRemaining : calculateDaysRemaining(subscription.expiryDate)}</td>
+                    <td>${actions}</td>
                 `;
                 tableBody.appendChild(row);
             });
-        };
+        }
 
-        // Edit subscription (edit subscription date or expiry)
+        async function loadSubscriptionsFromFirestore() {
+            try {
+                const querySnapshot = await db.collection("subscriptions").get();
+                const subscriptions = [];
+                querySnapshot.forEach((doc) => {
+                    const subscription = doc.data();
+                    subscription.id = doc.id;
+                    subscription.daysRemaining = subscription.daysRemaining != null
+                        ? subscription.daysRemaining
+                        : calculateDaysRemaining(subscription.expiryDate);
+                    subscriptions.push(subscription);
+                });
+                renderSubscriptions(subscriptions, false);
+            } catch (error) {
+                console.error("Error loading subscriptions from Firestore:", error);
+                loadSubscriptionsFromLocalStorage();
+            }
+        }
+
+        function loadSubscriptionsFromLocalStorage() {
+            const subscriptions = getStoredSubscriptions();
+            renderSubscriptions(subscriptions, true);
+        }
+
+        function loadSubscriptions() {
+            if (db) {
+                loadSubscriptionsFromFirestore();
+            } else {
+                loadSubscriptionsFromLocalStorage();
+            }
+        }
+
         function editSubscription(docId) {
+            if (!db) return;
             const newSubscriptionDate = prompt("Enter new subscription date (yyyy-mm-dd):");
             const newExpiryDate = prompt("Enter new expiry date (yyyy-mm-dd):");
 
@@ -196,13 +259,31 @@
                     loadSubscriptions();
                 })
                 .catch((error) => {
-                    console.error("Error updating subscription: ", error);
+                    console.error("Error updating subscription:", error);
                 });
             }
         }
 
-        // Extend subscription duration
+        function editSubscriptionLocal(index) {
+            const subscriptions = getStoredSubscriptions();
+            const subscription = subscriptions[index];
+            if (!subscription) return;
+
+            const newSubscriptionDate = prompt("Enter new subscription date (yyyy-mm-dd):", subscription.subscriptionDate);
+            const newExpiryDate = prompt("Enter new expiry date (yyyy-mm-dd):", subscription.expiryDate);
+
+            if (newSubscriptionDate && newExpiryDate) {
+                subscription.subscriptionDate = newSubscriptionDate;
+                subscription.expiryDate = newExpiryDate;
+                subscription.daysRemaining = calculateDaysRemaining(newExpiryDate);
+                saveStoredSubscriptions(subscriptions);
+                alert("Subscription updated locally!");
+                loadSubscriptionsFromLocalStorage();
+            }
+        }
+
         function extendSubscription(docId) {
+            if (!db) return;
             const currentDuration = prompt("Enter number of months to extend (e.g., 1, 2, 3...):");
 
             if (currentDuration) {
@@ -210,7 +291,7 @@
                 .then((doc) => {
                     const subscription = doc.data();
                     const newExpiryDate = new Date(subscription.expiryDate);
-                    newExpiryDate.setMonth(newExpiryDate.getMonth() + parseInt(currentDuration));
+                    newExpiryDate.setMonth(newExpiryDate.getMonth() + parseInt(currentDuration, 10));
                     db.collection("subscriptions").doc(docId).update({
                         expiryDate: newExpiryDate.toISOString().split('T')[0]
                     })
@@ -220,13 +301,28 @@
                     });
                 })
                 .catch((error) => {
-                    console.error("Error extending subscription: ", error);
+                    console.error("Error extending subscription:", error);
                 });
             }
         }
 
-        // Delete subscription with confirmation
+        function extendSubscriptionLocal(index) {
+            const subscriptions = getStoredSubscriptions();
+            const subscription = subscriptions[index];
+            if (!subscription) return;
+            const addMonths = prompt("Enter number of months to extend (e.g., 1, 2, 3...):", "1");
+            if (!addMonths) return;
+            const expiry = new Date(subscription.expiryDate);
+            expiry.setMonth(expiry.getMonth() + parseInt(addMonths, 10));
+            subscription.expiryDate = expiry.toISOString().split('T')[0];
+            subscription.daysRemaining = calculateDaysRemaining(subscription.expiryDate);
+            saveStoredSubscriptions(subscriptions);
+            alert("Subscription extended locally!");
+            loadSubscriptionsFromLocalStorage();
+        }
+
         function deleteSubscription(docId) {
+            if (!db) return;
             if (confirm("Are you sure you want to delete this subscription?")) {
                 db.collection("subscriptions").doc(docId).delete()
                 .then(() => {
@@ -234,15 +330,20 @@
                     loadSubscriptions();
                 })
                 .catch((error) => {
-                    console.error("Error deleting subscription: ", error);
+                    console.error("Error deleting subscription:", error);
                 });
             }
         }
 
-        // Load subscriptions when the page loads
-        window.onload = loadSubscriptions;
+        function deleteSubscriptionLocal(index) {
+            if (!confirm("Are you sure you want to delete this subscription?")) return;
+            const subscriptions = getStoredSubscriptions();
+            subscriptions.splice(index, 1);
+            saveStoredSubscriptions(subscriptions);
+            alert("Subscription deleted locally!");
+            loadSubscriptionsFromLocalStorage();
+        }
 
-        // Toggle Dark Mode
         function toggleDarkMode() {
             const currentTheme = document.body.getAttribute('data-theme');
             if (currentTheme === 'dark') {
@@ -254,13 +355,17 @@
             }
         }
 
-        // Persist theme preference
-        window.onload = function() {
+        function loadTheme() {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'dark') {
                 document.body.setAttribute('data-theme', 'dark');
             }
-        };
+        }
+
+        window.addEventListener('load', function() {
+            loadTheme();
+            loadSubscriptions();
+        });
     </script>
 
     <!-- Footer Section -->
