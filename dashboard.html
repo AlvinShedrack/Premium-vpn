@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Dashboard</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            background-color: #f4f7fa;
+            margin: 0;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        table td {
+            background-color: #fff;
+        }
+        .back-btn {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer Styling */
+        footer {
+            background-color: #4CAF50;
+            color: rgb(255, 255, 255);
+            text-align: center;
+            padding: 8px;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>User Subscription Dashboard</h1>
+
+    <table id="subscriptionTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Subscription Date</th>
+                <th>Duration (Months)</th>
+                <th>Expiry Date</th>
+                <th>Days Remaining</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- User data will be dynamically populated here -->
+        </tbody>
+    </table>
+
+    <a href="form.html" class="back-btn">Go Back to Add Subscription</a>
+
+    <script>
+        // Load saved data from local storage and display on the page
+        function loadSubscriptions() {
+            const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
+            const tableBody = document.querySelector("#subscriptionTable tbody");
+            tableBody.innerHTML = "";
+            subscriptions.forEach((subscription) => {
+                const expiryDate = new Date(subscription.expiryDate);
+                const today = new Date();
+                const daysRemaining = Math.max(Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24)), 0);
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${subscription.userName}</td>
+                    <td>${subscription.subscriptionDate}</td>
+                    <td>${subscription.duration}</td>
+                    <td>${subscription.expiryDate}</td>
+                    <td>${daysRemaining}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Load subscriptions when the page loads
+        window.onload = loadSubscriptions;
+    </script>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>Created by Alvin Shedrack</p>
+    </footer>
+
+</body>
+</html>

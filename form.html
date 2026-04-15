@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Subscription</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            background-color: #f4f7fa;
+            margin: 0;
+        }
+        .form-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+            width: 400px;
+            margin: 0 auto;
+        }
+        h2 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        input[type="text"],
+        input[type="date"],
+        select,
+        button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .back-btn {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer Styling */
+        footer {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Add New Subscription</h2>
+        <input type="text" id="userName" placeholder="Enter user name" required>
+        <input type="date" id="subscriptionDate" required>
+        <select id="subscriptionDuration" required>
+            <option value="" disabled selected>Select Duration (months)</option>
+            <option value="1">1 month</option>
+            <option value="2">2 months</option>
+            <option value="3">3 months</option>
+            <option value="4">4 months</option>
+            <option value="5">5 months</option>
+            <option value="6">6 months</option>
+            <option value="7">7 months</option>
+            <option value="8">8 months</option>
+            <option value="9">9 months</option>
+            <option value="10">10 months</option>
+        </select>
+        <button onclick="addSubscription()">Add Subscription</button>
+
+        <a href="dashboard.html" class="back-btn">Go to Dashboard</a>
+    </div>
+
+    <script>
+        // Add a new subscription to localStorage
+        function addSubscription() {
+            const userName = document.getElementById("userName").value;
+            const subscriptionDate = document.getElementById("subscriptionDate").value;
+            const subscriptionDuration = parseInt(document.getElementById("subscriptionDuration").value, 10);
+            
+            if (userName && subscriptionDate && subscriptionDuration > 0) {
+                const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
+                
+                // Format the subscription date to day, month date, year (e.g., Monday, 15 April 2026)
+                const formattedDate = new Date(subscriptionDate);
+                const formattedDateString = formattedDate.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                
+                // Calculate the expiry date by adding months to the subscription date
+                const expiryDate = new Date(formattedDate);
+                expiryDate.setMonth(expiryDate.getMonth() + subscriptionDuration);
+                
+                // Format expiry date in the same format
+                const formattedExpiryDateString = expiryDate.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+
+                subscriptions.push({ 
+                    userName, 
+                    subscriptionDate: formattedDateString, 
+                    duration: subscriptionDuration, 
+                    expiryDate: formattedExpiryDateString 
+                });
+                
+                localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+                alert("Subscription Added Successfully!");
+                document.getElementById("userName").value = "";
+                document.getElementById("subscriptionDate").value = "";
+                document.getElementById("subscriptionDuration").value = "";
+            } else {
+                alert("Please fill out all fields correctly.");
+            }
+        }
+    </script>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>Created by Alvin Shedrack</p>
+    </footer>
+
+</body>
+</html>
