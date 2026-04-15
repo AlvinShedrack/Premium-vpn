@@ -5,79 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subscription Dashboard</title>
     <style>
+        /* Default Light Mode Styles */
+        :root {
+            --background-color: #f4f7fa;
+            --text-color: #333;
+            --button-background: #4CAF50;
+            --button-color: white;
+            --header-color: #4CAF50;
+            --footer-background: #4CAF50;
+            --footer-text-color: white;
+        }
+
+        /* Dark Mode Styles */
+        [data-theme="dark"] {
+            --background-color: #121212;
+            --text-color: #f4f4f4;
+            --button-background: #1e1e1e;
+            --button-color: #4CAF50;
+            --header-color: #4CAF50;
+            --footer-background: #1e1e1e;
+            --footer-text-color: white;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
-            padding: 20px;
-            background-color: #f4f7fa;
+            background-color: var(--background-color);
+            color: var(--text-color);
             margin: 0;
+            transition: background-color 0.3s, color 0.3s;
         }
+
         h1 {
-            color: #4CAF50;
+            color: var(--header-color);
             text-align: center;
         }
+
         table {
             width: 100%;
             margin-top: 20px;
             border-collapse: collapse;
         }
+
         table th, table td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
+
         table th {
-            background-color: #4CAF50;
+            background-color: var(--header-color);
             color: white;
         }
+
         table td {
             background-color: #fff;
         }
+
         .back-btn {
             display: block;
             margin-top: 20px;
             text-align: center;
-            color: #4CAF50;
+            color: var(--header-color);
             text-decoration: none;
         }
+
         .back-btn:hover {
             text-decoration: underline;
         }
 
-        /* Edit and Delete Buttons */
-        .action-btn {
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .action-btn:hover {
-            background-color: #e68900;
-        }
-        .delete-btn {
-            background-color: #f44336;
-        }
-        .delete-btn:hover {
-            background-color: #d32f2f;
+        /* Mobile Styling for Table */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            table {
+                width: 100%;
+                font-size: 14px;
+            }
+            h1 {
+                font-size: 18px;
+            }
+            table th, table td {
+                padding: 10px;
+            }
         }
 
         /* Footer Styling */
         footer {
-            background-color: #4CAF50;
-            color: white;
+            background-color: var(--footer-background);
+            color: var(--footer-text-color);
             text-align: center;
             padding: 10px;
             position: fixed;
             width: 100%;
             bottom: 0;
         }
+
+        /* Dark Mode Toggle */
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--button-background);
+            color: var(--button-color);
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
-    <h1>User Subscription Dashboard</h1>
-
+    <h1>Premium VPN Subscription Dashboard</h1>
+    <a href="form.html" class="back-btn">Add Subscriber</a>
     <table id="subscriptionTable">
         <thead>
             <tr>
@@ -86,7 +127,7 @@
                 <th>Duration (Months)</th>
                 <th>Expiry Date</th>
                 <th>Days Remaining</th>
-                <th>Action</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -94,218 +135,138 @@
         </tbody>
     </table>
 
-    <a href="form.html" class="back-btn">Go Back to Add Subscription</a>
+
+
+    <!-- Dark Mode Toggle Button -->
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
 
     <script>
-        // Load saved data from local storage and display on the page
-        function loadSubscriptions() {
-            const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
+        // Firebase configuration (use your own config)
+        var firebaseConfig = {
+            apiKey: "your-api-key",
+            authDomain: "your-project-id.firebaseapp.com",
+            databaseURL: "https://your-project-id.firebaseio.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
+            messagingSenderId: "your-sender-id",
+            appId: "your-app-id"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Function to load subscriptions from Firestore
+        window.loadSubscriptions = async function() {
+            const querySnapshot = await getDocs(collection(db, "subscriptions"));
             const tableBody = document.querySelector("#subscriptionTable tbody");
             tableBody.innerHTML = "";
 
-            subscriptions.forEach((subscription, index) => {
-                const expiryDate = new Date(subscription.expiryDate);
-                const today = new Date();
-                const daysRemaining = Math.max(Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24)), 0);
-
+            querySnapshot.forEach((doc) => {
+                const subscription = doc.data();
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td>${subscription.userName}</td>
                     <td>${subscription.subscriptionDate}</td>
-                    <td>${subscription.duration}</td>
+                    <td>${subscription.subscriptionDuration}</td>
                     <td>${subscription.expiryDate}</td>
-                    <td>${daysRemaining}</td>
+                    <td>${subscription.daysRemaining}</td>
                     <td>
-                        <button class="action-btn" onclick="editSubscription(${index})">Edit</button>
-                        <button class="action-btn delete-btn" onclick="deleteSubscription(${index})">Delete</button>
+                        <button onclick="editSubscription('${doc.id}')">Edit</button>
+                        <button onclick="extendSubscription('${doc.id}')">Extend</button>
+                        <button onclick="deleteSubscription('${doc.id}')">Delete</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
             });
-        }
+        };
 
-        // Function to edit a subscription
-        function editSubscription(index) {
-            const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
-            const subscription = subscriptions[index];
+        // Edit subscription (edit subscription date or expiry)
+        function editSubscription(docId) {
+            const newSubscriptionDate = prompt("Enter new subscription date (yyyy-mm-dd):");
+            const newExpiryDate = prompt("Enter new expiry date (yyyy-mm-dd):");
 
-            // Populate the form fields with the selected subscription's details
-            document.getElementById("userName").value = subscription.userName;
-            document.getElementById("subscriptionDate").value = subscription.subscriptionDate;
-            document.getElementById("subscriptionDuration").value = subscription.duration;
-
-            // Change the "Add Subscription" button to "Update Subscription"
-            const button = document.querySelector("button");
-            button.textContent = "Update Subscription";
-
-            // Change the button action to update the subscription
-            button.onclick = function() {
-                updateSubscription(index);
-            };
-        }
-
-        // Function to update a subscription
-        function updateSubscription(index) {
-            const userName = document.getElementById("userName").value;
-            const subscriptionDate = document.getElementById("subscriptionDate").value;
-            const subscriptionDuration = parseInt(document.getElementById("subscriptionDuration").value, 10);
-            
-            if (userName && subscriptionDate && subscriptionDuration > 0) {
-                const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
-
-                // Format the subscription date to day, month date, year (e.g., Monday, 15 April 2026)
-                const formattedDate = new Date(subscriptionDate);
-                const formattedDateString = formattedDate.toLocaleDateString('en-GB', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
+            if (newSubscriptionDate && newExpiryDate) {
+                db.collection("subscriptions").doc(docId).update({
+                    subscriptionDate: newSubscriptionDate,
+                    expiryDate: newExpiryDate
+                })
+                .then(() => {
+                    alert("Subscription updated!");
+                    loadSubscriptions();
+                })
+                .catch((error) => {
+                    console.error("Error updating subscription: ", error);
                 });
-
-                // Calculate the expiry date by adding months to the subscription date
-                const expiryDate = new Date(formattedDate);
-                expiryDate.setMonth(expiryDate.getMonth() + subscriptionDuration);
-
-                // Format expiry date in the same format
-                const formattedExpiryDateString = expiryDate.toLocaleDateString('en-GB', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                });
-
-                // Update the subscription details
-                subscriptions[index] = { 
-                    userName, 
-                    subscriptionDate: formattedDateString, 
-                    duration: subscriptionDuration, 
-                    expiryDate: formattedExpiryDateString 
-                };
-
-                localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
-
-                // Reset the form and button
-                document.getElementById("userName").value = "";
-                document.getElementById("subscriptionDate").value = "";
-                document.getElementById("subscriptionDuration").value = "";
-                document.querySelector("button").textContent = "Add Subscription";
-
-                // Reload the subscriptions in the table
-                loadSubscriptions();
-            } else {
-                alert("Please fill out all fields correctly.");
             }
         }
 
-        // Function to delete a subscription
-        function deleteSubscription(index) {
-            const subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
-            subscriptions.splice(index, 1); // Remove the subscription at the given index
-            localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+        // Extend subscription duration
+        function extendSubscription(docId) {
+            const currentDuration = prompt("Enter number of months to extend (e.g., 1, 2, 3...):");
 
-            // Reload the subscriptions in the table
-            loadSubscriptions();
+            if (currentDuration) {
+                db.collection("subscriptions").doc(docId).get()
+                .then((doc) => {
+                    const subscription = doc.data();
+                    const newExpiryDate = new Date(subscription.expiryDate);
+                    newExpiryDate.setMonth(newExpiryDate.getMonth() + parseInt(currentDuration));
+                    db.collection("subscriptions").doc(docId).update({
+                        expiryDate: newExpiryDate.toISOString().split('T')[0]
+                    })
+                    .then(() => {
+                        alert("Subscription extended!");
+                        loadSubscriptions();
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error extending subscription: ", error);
+                });
+            }
+        }
+
+        // Delete subscription with confirmation
+        function deleteSubscription(docId) {
+            if (confirm("Are you sure you want to delete this subscription?")) {
+                db.collection("subscriptions").doc(docId).delete()
+                .then(() => {
+                    alert("Subscription deleted!");
+                    loadSubscriptions();
+                })
+                .catch((error) => {
+                    console.error("Error deleting subscription: ", error);
+                });
+            }
         }
 
         // Load subscriptions when the page loads
         window.onload = loadSubscriptions;
+
+        // Toggle Dark Mode
+        function toggleDarkMode() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Persist theme preference
+        window.onload = function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+        };
     </script>
 
     <!-- Footer Section -->
     <footer>
         <p>Created by Alvin Shedrack</p>
     </footer>
-<script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-firestore.js"></script>
-<!-- Firebase SDK (Modular Version) -->
-<script type="module">
-    // Import the Firebase modules that you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
-    
-    // Firebase configuration (use your own config)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAS1gwZkFurcAvUCOHgbclc_h0OcXU8gPU",
-        authDomain: "premium-vpn-8fbbb.firebaseapp.com",
-        databaseURL: "https://premium-vpn-8fbbb-default-rtdb.firebaseio.com",
-        projectId: "premium-vpn-8fbbb",
-        storageBucket: "premium-vpn-8fbbb.firebasestorage.app",
-        messagingSenderId: "399953657460",
-        appId: "1:399953657460:web:5731e9396cd8b7d6665b21",
-        measurementId: "G-PH7436XLD2"
-    };
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Function to add a new subscription to Firestore
-    window.addSubscription = async function() {
-        const userName = document.getElementById("userName").value;
-        const subscriptionDate = document.getElementById("subscriptionDate").value;
-        const subscriptionDuration = document.getElementById("subscriptionDuration").value;
-
-        if (userName && subscriptionDate && subscriptionDuration) {
-            try {
-                await addDoc(collection(db, "subscriptions"), {
-                    userName: userName,
-                    subscriptionDate: subscriptionDate,
-                    subscriptionDuration: subscriptionDuration
-                });
-                alert("Subscription Added!");
-                document.getElementById("userName").value = "";
-                document.getElementById("subscriptionDate").value = "";
-                document.getElementById("subscriptionDuration").value = "";
-            } catch (e) {
-                console.error("Error adding document: ", e);
-            }
-        } else {
-            alert("Please fill out all fields.");
-        }
-    };
-</script>
-<!-- Firebase SDK (Modular Version) -->
-<script type="module">
-    // Import the Firebase modules that you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
-
-    // Firebase configuration (use your own config)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAS1gwZkFurcAvUCOHgbclc_h0OcXU8gPU",
-        authDomain: "premium-vpn-8fbbb.firebaseapp.com",
-        databaseURL: "https://premium-vpn-8fbbb-default-rtdb.firebaseio.com",
-        projectId: "premium-vpn-8fbbb",
-        storageBucket: "premium-vpn-8fbbb.firebasestorage.app",
-        messagingSenderId: "399953657460",
-        appId: "1:399953657460:web:5731e9396cd8b7d6665b21",
-        measurementId: "G-PH7436XLD2"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Function to load subscriptions from Firestore
-    window.loadSubscriptions = async function() {
-        const querySnapshot = await getDocs(collection(db, "subscriptions"));
-        const tableBody = document.querySelector("#subscriptionTable tbody");
-        tableBody.innerHTML = "";
-
-        querySnapshot.forEach((doc) => {
-            const subscription = doc.data();
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${subscription.userName}</td>
-                <td>${subscription.subscriptionDate}</td>
-                <td>${subscription.subscriptionDuration}</td>
-            `;
-            tableBody.appendChild(row);
-        });
-    };
-
-    // Load subscriptions when the page loads
-    window.onload = loadSubscriptions;
-</script>
 </body>
 </html>
