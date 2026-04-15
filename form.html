@@ -145,6 +145,54 @@
     <footer>
         <p>Created by Alvin Shedrack</p>
     </footer>
+<script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.7/firebase-firestore.js"></script>
+<!-- Firebase SDK (Modular Version) -->
+<script type="module">
+    // Import the Firebase modules that you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+    
+    // Firebase configuration (use your own config)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAS1gwZkFurcAvUCOHgbclc_h0OcXU8gPU",
+        authDomain: "premium-vpn-8fbbb.firebaseapp.com",
+        databaseURL: "https://premium-vpn-8fbbb-default-rtdb.firebaseio.com",
+        projectId: "premium-vpn-8fbbb",
+        storageBucket: "premium-vpn-8fbbb.firebasestorage.app",
+        messagingSenderId: "399953657460",
+        appId: "1:399953657460:web:5731e9396cd8b7d6665b21",
+        measurementId: "G-PH7436XLD2"
+    };
 
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Function to add a new subscription to Firestore
+    window.addSubscription = async function() {
+        const userName = document.getElementById("userName").value;
+        const subscriptionDate = document.getElementById("subscriptionDate").value;
+        const subscriptionDuration = document.getElementById("subscriptionDuration").value;
+
+        if (userName && subscriptionDate && subscriptionDuration) {
+            try {
+                await addDoc(collection(db, "subscriptions"), {
+                    userName: userName,
+                    subscriptionDate: subscriptionDate,
+                    subscriptionDuration: subscriptionDuration
+                });
+                alert("Subscription Added!");
+                document.getElementById("userName").value = "";
+                document.getElementById("subscriptionDate").value = "";
+                document.getElementById("subscriptionDuration").value = "";
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        } else {
+            alert("Please fill out all fields.");
+        }
+    };
+</script>
 </body>
 </html>
