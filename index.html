@@ -155,6 +155,12 @@
 
     <h1>Premium VPN Subscription Dashboard</h1>
     <a href="form.html" class="back-btn">Add Subscriber</a>
+    <div style="text-align:center; margin: 20px 0;">
+        <button onclick="exportSubscriptions()" style="margin-right: 10px;">Export Subscriptions</button>
+        <button onclick="document.getElementById('importFile').click();">Import Subscriptions</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" onchange="handleImportFile(event)">
+        <div id="syncStatus" style="font-size: 14px; color: #555; margin-top: 10px;"></div>
+    </div>
     <div class="table-wrapper">
         <table id="subscriptionTable">
             <thead>
@@ -176,14 +182,86 @@
     <!-- Dark Mode Toggle Button -->
     <button class="dark-mode-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
 
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script>
-        const localSubscriptionsKey = "vpnSubscriptions";
+        const firebaseConfig = {
+            apiKey: "AIzaSyAS1gwZkFurcAvUCOHgbclc_h0OcXU8gPU",
+            authDomain: "premium-vpn-8fbbb.firebaseapp.com",
+            databaseURL: "https://premium-vpn-8fbbb-default-rtdb.firebaseio.com",
+            projectId: "premium-vpn-8fbbb",
+            storageBucket: "premium-vpn-8fbbb.firebasestorage.app",
+            messagingSenderId: "399953657460",
+            appId: "1:399953657460:web:5731e9396cd8b7d6665b21",
+            measurementId: "G-PH7436XLD2"
+        };
+
+        const remoteSyncEnabled = Boolean(
+            firebaseConfig.apiKey &&
+            firebaseConfig.databaseURL &&
+            firebaseConfig.apiKey !== "AIzaSyAS1gwZkFurcAvUCOHgbclc_h0OcXU8gPU" &&
+            firebaseConfig.databaseURL !== "https://premium-vpn-8fbbb-default-rtdb.firebaseio.com"
+        );
+        let remoteSubscriptions = [];
+        let firebaseDatabase = null;
+
+        function initDatabase() {
+            if (!remoteSyncEnabled) return;
+
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                firebaseDatabase = firebase.database();
+
+                const subscriptionsRef = firebaseDatabase.ref("vpnSubscriptions");
+                subscriptionsRef.on("value", (snapshot) => {
+                    const data = snapshot.val() || {};
+                    remoteSubscriptions = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+                    renderSubscriptions(remoteSubscriptions);
+                });
+
+                // Load subscriptions immediately as fallback
+                subscriptionsRef.once("value", (snapshot) => {
+                    const data = snapshot.val() || {};
+                    remoteSubscriptions = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+                    renderSubscriptions(remoteSubscriptions);
+                });
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+            }
+        }
+
+        const localSubscriptionsKey = getDeviceStorageKey("vpnSubscriptions");
+
+        function getDeviceStorageKey(baseKey) {
+            let deviceId = localStorage.getItem("vpnDeviceId");
+            if (!deviceId) {
+                deviceId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+                localStorage.setItem("vpnDeviceId", deviceId);
+            }
+            return `${baseKey}-${deviceId}`;
+        }
 
         function getStoredSubscriptions() {
+            if (remoteSyncEnabled) {
+                return remoteSubscriptions.slice();
+            }
             return JSON.parse(localStorage.getItem(localSubscriptionsKey) || '[]');
         }
 
         function saveStoredSubscriptions(subscriptions) {
+            if (remoteSyncEnabled) {
+                if (!firebaseDatabase) return;
+                const updates = {};
+                subscriptions.forEach((subscription) => {
+                    const { id, ...value } = subscription;
+                    const updateId = id || firebaseDatabase.ref('vpnSubscriptions').push().key;
+                    updates[updateId] = value;
+                });
+                firebaseDatabase.ref("vpnSubscriptions").set(updates);
+                return;
+            }
             localStorage.setItem(localSubscriptionsKey, JSON.stringify(subscriptions));
         }
 
@@ -226,6 +304,44 @@
         function loadSubscriptions() {
             const subscriptions = getStoredSubscriptions();
             renderSubscriptions(subscriptions);
+        }
+
+        function exportSubscriptions() {
+            const subscriptions = getStoredSubscriptions();
+            const blob = new Blob([JSON.stringify(subscriptions, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'vpn-subscriptions.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!Array.isArray(imported)) {
+                        throw new Error('Invalid file format. Expected array.');
+                    }
+                    if (!confirm('Importing will replace current subscriptions on this device. Continue?')) {
+                        return;
+                    }
+                    saveStoredSubscriptions(imported);
+                    alert('Subscriptions imported successfully.');
+                    loadSubscriptions();
+                } catch (error) {
+                    alert('Failed to import subscriptions: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
         }
 
         function editSubscriptionLocal(index) {
@@ -291,9 +407,24 @@
             }
         }
 
+        function updateSyncStatus() {
+            const status = document.getElementById('syncStatus');
+            if (!status) return;
+            if (remoteSyncEnabled) {
+                status.textContent = 'Remote sync enabled. Subscriptions are shared across devices via Firebase.';
+            } else {
+                status.textContent = 'Remote sync is disabled. Configure Firebase settings in the code to share subscriptions across devices.';
+            }
+        }
+
         window.addEventListener('load', function() {
             loadTheme();
-            loadSubscriptions();
+            updateSyncStatus();
+            if (remoteSyncEnabled) {
+                initDatabase();
+            } else {
+                loadSubscriptions();
+            }
         });
     </script>
 
