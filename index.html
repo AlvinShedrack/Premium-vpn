@@ -146,7 +146,7 @@ table th:first-child, table td:first-child {
             position: fixed;
             width: 100%;
             bottom: 0;
-            z-index: 1; /* Ensure the footer is above the sticky column */
+            z-index: 100; /* Ensure the footer is above the sticky column */
         }
 
         /* Dark Mode Toggle */
@@ -186,7 +186,7 @@ table th:first-child, table td:first-child {
     </div>
 
     <!-- Dark Mode Toggle Button -->
-    <button class="dark-mode-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+
 
     <script>
         const localSubscriptionsKey = "vpnSubscriptions";
