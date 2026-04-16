@@ -159,22 +159,22 @@
         <table id="subscriptionTable">
             <thead>
                 <tr>
-                <th>Name</th>
-                <th>Subscription Date</th>
-                <th>Duration (Months)</th>
-                <th>Expiry Date</th>
-                <th>Days Remaining</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- User data will be dynamically populated here -->
-        </tbody>
-    </table>
+                    <th>Name</th>
+                    <th>Initial Subscription Date</th>
+                    <th>Duration (Months)</th>
+                    <th>Expiry Date</th>
+                    <th>Days Remaining</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- User data will be dynamically populated here -->
+            </tbody>
+        </table>
     </div>
 
     <!-- Dark Mode Toggle Button -->
-  
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
 
     <script>
         const localSubscriptionsKey = "vpnSubscriptions";
@@ -185,6 +185,15 @@
 
         function saveStoredSubscriptions(subscriptions) {
             localStorage.setItem(localSubscriptionsKey, JSON.stringify(subscriptions));
+        }
+
+        // Function to calculate months since the initial subscription date
+        function calculateMonthsSinceSubscription(subscriptionDate) {
+            const today = new Date();
+            const startDate = new Date(subscriptionDate);
+            const diffInTime = today.getTime() - startDate.getTime();
+            const monthsSince = Math.floor(diffInTime / (1000 * 3600 * 24 * 30)); // Approximate a month as 30 days
+            return monthsSince >= 0 ? monthsSince : 0;
         }
 
         // Function to calculate days remaining, excluding today, and based on 30 days per month
@@ -200,18 +209,32 @@
             return daysRemaining > 0 ? daysRemaining : 0;
         }
 
+        // Function to reorder subscriptions based on days remaining (ascending order)
+        function reorderSubscriptionsByDaysRemaining(subscriptions) {
+            return subscriptions.sort((a, b) => {
+                const daysRemainingA = calculateDaysRemaining(a.expiryDate);
+                const daysRemainingB = calculateDaysRemaining(b.expiryDate);
+                return daysRemainingA - daysRemainingB; // Sort in ascending order of days remaining
+            });
+        }
+
         function renderSubscriptions(subscriptions) {
             const tableBody = document.querySelector("#subscriptionTable tbody");
             tableBody.innerHTML = "";
 
+            // Reorder subscriptions based on days remaining
+            subscriptions = reorderSubscriptionsByDaysRemaining(subscriptions);
+
             subscriptions.forEach((subscription, index) => {
                 const row = document.createElement("tr");
                 const daysRemaining = calculateDaysRemaining(subscription.expiryDate);
+                const monthsSince = calculateMonthsSinceSubscription(subscription.subscriptionDate); // Calculate months since subscription
+
                 row.innerHTML = `
-                    <td>${subscription.userName || ''}</td>
-                    <td>${subscription.subscriptionDate || ''}</td>
-                    <td>${subscription.subscriptionDuration || ''}</td>
-                    <td>${subscription.expiryDate || ''}</td>
+                    <td contenteditable="true">${subscription.userName || ''}</td>
+                    <td contenteditable="true">${subscription.subscriptionDate || ''}</td>
+                    <td contenteditable="true">${monthsSince}</td> <!-- Display months since subscription -->
+                    <td contenteditable="true">${subscription.expiryDate || ''}</td>
                     <td>${daysRemaining}</td>
                     <td>
                         <button onclick="editSubscriptionLocal(${index})">Edit</button>
@@ -235,11 +258,14 @@
 
             const newSubscriptionDate = prompt("Enter new subscription date (yyyy-mm-dd):", subscription.subscriptionDate);
             const newExpiryDate = prompt("Enter new expiry date (yyyy-mm-dd):", subscription.expiryDate);
+            const newUserName = prompt("Enter new user name:", subscription.userName);
 
-            if (newSubscriptionDate && newExpiryDate) {
+            if (newSubscriptionDate && newExpiryDate && newUserName) {
                 subscription.subscriptionDate = newSubscriptionDate;
                 subscription.expiryDate = newExpiryDate;
+                subscription.userName = newUserName;
                 subscription.daysRemaining = calculateDaysRemaining(newExpiryDate);
+                subscription.monthsSince = calculateMonthsSinceSubscription(newSubscriptionDate);
                 saveStoredSubscriptions(subscriptions);
                 alert("Subscription updated!");
                 loadSubscriptions();
