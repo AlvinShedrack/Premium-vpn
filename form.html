@@ -163,6 +163,7 @@
 
             console.log("Adding Subscription:", userName, subscriptionDate, subscriptionDuration);
 
+            // Ensure all fields are filled out
             if (!userName || !subscriptionDate || !subscriptionDuration) {
                 alert("Please fill out all fields.");
                 return;
@@ -184,7 +185,7 @@
             saveStoredSubscriptions(existing);
 
             alert("Subscription Added!");
-            window.location.href = "index.html";
+            window.location.href = "index.html"; // Redirect to dashboard
         }
     </script>
 
