@@ -117,25 +117,24 @@ table th:first-child, table td:first-child {
         }
 
         /* Mobile Styling for Table */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-                padding-bottom: 140px;
-            }
-            .table-wrapper {
-                margin-top: 10px;
-            }
-            table {
-                min-width: 700px;
-                font-size: 13px;
-            }
-            h1 {
-                font-size: 18px;
-            }
-            table th, table td {
-                padding: 10px;
-            }
-        }
+@media (max-width: 600px) {
+    /* Expand the Expiry Date column */
+    table th:nth-child(4), table td:nth-child(4) {
+        width: 150px; /* Adjust width for mobile view */
+    }
+
+    /* Make Actions column buttons appear in one line */
+    table td:last-child {
+        display: flex;
+        justify-content: space-around; /* Ensure buttons are spaced evenly */
+        gap: 10px; /* Add space between buttons */
+    }
+
+    table th, table td {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
 
         /* Footer Styling */
         footer {
