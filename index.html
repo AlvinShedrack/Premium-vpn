@@ -84,6 +84,25 @@
             background-color: var(--row-hover-dark);
         }
 
+        table th {
+            position: sticky;
+            top: 0;
+            background-color: var(--header-color); /* Set header background color for sticky header */
+            z-index: 1; /* Ensure the header is above the table content */
+        }
+
+        table th:first-child {
+            background-color: var(--header-color); /* Set same background for sticky first column header */
+            z-index: 2; /* Ensure the sticky header is above the table */
+        }
+
+        table th:first-child, table td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: var(--row-background-light); /* Ensure sticky column has the same background color */
+            z-index: 2; /* Ensure it stays on top of the content */
+        }
+
         .back-btn {
             display: block;
             margin-top: 20px;
@@ -159,7 +178,7 @@
         <table id="subscriptionTable">
             <thead>
                 <tr>
-                    <th>Name</th>
+                    <th>User Name</th>
                     <th>Initial Subscription Date</th>
                     <th>Days Remaining</th>
                     <th>Expiry Date</th>
@@ -174,7 +193,7 @@
     </div>
 
     <!-- Dark Mode Toggle Button -->
-   
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
 
     <script>
         const localSubscriptionsKey = "vpnSubscriptions";

@@ -20,19 +20,17 @@
         }
 
         /* Dark Mode Styles */
-/* Dark Mode Styles */
         [data-theme="dark"] {
             --background-color: #121212;
             --text-color: #f4f4f4;
             --button-background: #1e1e1e;
-            --button-color: #4CAF50;
-            --header-color: #4CAF50;
-            --footer-background: #FFFF00;  /* Set footer background to yellow */
+            --button-color: #007BFF;
+            --header-color: #007BFF;
+            --footer-background: #1e1e1e;
             --footer-text-color: white;
-            --row-background-light: #444;
-            --row-background-dark: #555;
-            --row-hover-light: #555;
-            --row-hover-dark: #777;
+            --input-background: #333;
+            --input-text-color: white;
+            --form-background: #333;
         }
 
         body {
@@ -40,6 +38,11 @@
             background-color: var(--background-color);
             color: var(--text-color);
             margin: 0;
+            padding: 0;
+            height: 100vh; /* Make the body full height */
+            display: flex; /* Use flexbox */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
             transition: background-color 0.3s, color 0.3s;
         }
 
