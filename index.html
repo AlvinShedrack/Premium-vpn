@@ -124,16 +124,29 @@ table th:first-child, table td:first-child {
         width: 150px; /* Adjust width for mobile view */
     }
 
-    /* Make Actions column buttons appear in one line */
+    /* Actions column buttons displayed in one line */
     table td:last-child {
         display: flex;
-        justify-content: space-around; /* Ensure buttons are spaced evenly */
-        gap: 10px; /* Add space between buttons */
+        justify-content: space-between;
+        gap: 5px; /* Add space between buttons */
     }
 
+    /* Ensure the total duration is on a single line */
+    table td:nth-child(5) {
+        white-space: nowrap; /* Prevent text from wrapping */
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Make Actions column buttons appear in one line */
+    table td:last-child button {
+        flex-grow: 1; /* Ensure buttons take up available space */
+    }
+
+    /* Make table text smaller and more compact for mobile */
     table th, table td {
-        padding: 10px;
-        font-size: 13px;
+        padding: 8px;
+        font-size: 12px;
     }
 }
 
@@ -258,27 +271,32 @@ table th:first-child, table td:first-child {
         }
 
         function loadSubscriptions() {
-            let subscriptions = getStoredSubscriptions();
-            if (subscriptions.length === 0) {
-                // Try to load from JSON file
-                fetch('vpn-subscriptions.json')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data && data.length > 0) {
-                            saveStoredSubscriptions(data);
-                            renderSubscriptions(data);
-                            sortTable(2); // Sort after loading
-                        } else {
-                            renderSubscriptions(subscriptions);
-                        }
-                    })
-                    .catch(err => {
-                        console.log('No JSON data or error loading:', err);
-                        renderSubscriptions(subscriptions);
-                    });
-            } else {
+            const subscriptions = getStoredSubscriptions();
+            if (subscriptions.length > 0) {
                 renderSubscriptions(subscriptions);
+                return;
             }
+
+            if (window.location.protocol === 'file:') {
+                // Local file previews can block fetch requests for local JSON.
+                renderSubscriptions([]);
+                return;
+            }
+
+            fetch('vpn-subscriptions.json')
+                .then(response => response.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        saveStoredSubscriptions(data);
+                        renderSubscriptions(data);
+                    } else {
+                        renderSubscriptions([]);
+                    }
+                })
+                .catch(err => {
+                    console.error('Could not load subscriptions JSON:', err);
+                    renderSubscriptions([]);
+                });
         }
 
         // Function to handle sorting by column
