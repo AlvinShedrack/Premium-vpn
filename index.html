@@ -161,9 +161,9 @@
                 <tr>
                     <th>Name</th>
                     <th>Initial Subscription Date</th>
-                    <th>Duration (Months)</th>
-                    <th>Expiry Date</th>
                     <th>Days Remaining</th>
+                    <th>Expiry Date</th>
+                    <th>Total Duration (Days)</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -187,13 +187,13 @@
             localStorage.setItem(localSubscriptionsKey, JSON.stringify(subscriptions));
         }
 
-        // Function to calculate months since the initial subscription date
-        function calculateMonthsSinceSubscription(subscriptionDate) {
+        // Function to calculate days since the initial subscription date
+        function calculateDaysSinceSubscription(subscriptionDate) {
             const today = new Date();
             const startDate = new Date(subscriptionDate);
             const diffInTime = today.getTime() - startDate.getTime();
-            const monthsSince = Math.floor(diffInTime / (1000 * 3600 * 24 * 30)); // Approximate a month as 30 days
-            return monthsSince >= 0 ? monthsSince : 0;
+            const daysSince = Math.floor(diffInTime / (1000 * 3600 * 24)); // Convert milliseconds to days
+            return daysSince >= 0 ? daysSince : 0;
         }
 
         // Function to calculate days remaining, excluding today, and based on 30 days per month
@@ -228,14 +228,14 @@
             subscriptions.forEach((subscription, index) => {
                 const row = document.createElement("tr");
                 const daysRemaining = calculateDaysRemaining(subscription.expiryDate);
-                const monthsSince = calculateMonthsSinceSubscription(subscription.subscriptionDate); // Calculate months since subscription
+                const daysSince = calculateDaysSinceSubscription(subscription.subscriptionDate); // Calculate days since subscription
 
                 row.innerHTML = `
                     <td contenteditable="true">${subscription.userName || ''}</td>
                     <td contenteditable="true">${subscription.subscriptionDate || ''}</td>
-                    <td contenteditable="true">${monthsSince}</td> <!-- Display months since subscription -->
+                    <td>${daysRemaining}</td> <!-- Display days remaining -->
                     <td contenteditable="true">${subscription.expiryDate || ''}</td>
-                    <td>${daysRemaining}</td>
+                    <td contenteditable="true">${daysSince}</td> <!-- Display duration since subscription in days -->
                     <td>
                         <button onclick="editSubscriptionLocal(${index})">Edit</button>
                         <button onclick="extendSubscriptionLocal(${index})">Extend</button>
@@ -265,7 +265,7 @@
                 subscription.expiryDate = newExpiryDate;
                 subscription.userName = newUserName;
                 subscription.daysRemaining = calculateDaysRemaining(newExpiryDate);
-                subscription.monthsSince = calculateMonthsSinceSubscription(newSubscriptionDate);
+                subscription.daysSince = calculateDaysSinceSubscription(newSubscriptionDate);
                 saveStoredSubscriptions(subscriptions);
                 alert("Subscription updated!");
                 loadSubscriptions();
