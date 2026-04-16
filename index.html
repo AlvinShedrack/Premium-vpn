@@ -118,76 +118,35 @@ table th:first-child, table td:first-child {
         }
 
         /* Mobile Styling for Table */
-@media (max-width: 768px) {
-    .table-wrapper {
-        overflow-x: hidden;
+@media (max-width: 600px) {
+    /* Expand the Expiry Date column */
+    table th:nth-child(4), table td:nth-child(4) {
+        width: 150px; /* Adjust width for mobile view */
     }
 
-    table {
-        width: 100%;
-        min-width: auto;
-        border: none;
-    }
-
-    thead,
-    tbody,
-    th,
-    td,
-    tr {
-        display: block;
-    }
-
-    thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-
-    tr {
-        margin-bottom: 16px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 10px;
-        background-color: var(--row-background-light);
-    }
-
-    td {
-        border: none;
-        position: relative;
-        padding-left: 120px;
-        text-align: left;
-        font-size: 14px;
-        white-space: normal;
-    }
-
-    td:before {
-        position: absolute;
-        top: 12px;
-        left: 16px;
-        width: 100px;
-        font-weight: 700;
-        content: attr(data-label);
-        color: var(--text-color);
-        white-space: nowrap;
-    }
-
-    td:last-child {
+    /* Actions column buttons displayed in one line */
+    table td:last-child {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding-left: 16px;
-        justify-content: flex-start;
+        justify-content: space-between;
+        gap: 5px; /* Add space between buttons */
     }
 
-    table th:first-child,
-    table td:first-child {
-        position: static;
-        left: auto;
-        background-color: transparent;
+    /* Ensure the total duration is on a single line */
+    table td:nth-child(5) {
+        white-space: nowrap; /* Prevent text from wrapping */
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    table tr:hover {
-        background-color: var(--row-hover-light);
+    /* Make Actions column buttons appear in one line */
+    table td:last-child button {
+        flex-grow: 1; /* Ensure buttons take up available space */
+    }
+
+    /* Make table text smaller and more compact for mobile */
+    table th, table td {
+        padding: 8px;
+        font-size: 12px;
     }
 }
 
@@ -296,12 +255,12 @@ table th:first-child, table td:first-child {
                 const daysSince = calculateDaysSinceSubscription(subscription.subscriptionDate); // Calculate days since subscription
 
                 row.innerHTML = `
-                    <td data-label="User Name" contenteditable="true">${subscription.userName || ''}</td>
-                    <td data-label="Initial Subscription Date" contenteditable="true">${subscription.subscriptionDate || ''}</td>
-                    <td data-label="Days Remaining">${daysRemaining}</td> <!-- Display days remaining -->
-                    <td data-label="Expiry Date" contenteditable="true">${subscription.expiryDate || ''}</td>
-                    <td data-label="Total Duration">${daysSince} (${(daysSince * 2.2).toFixed(2)} GB)</td> <!-- Display duration in days and GB -->
-                    <td data-label="Actions">
+                    <td contenteditable="true">${subscription.userName || ''}</td>
+                    <td contenteditable="true">${subscription.subscriptionDate || ''}</td>
+                    <td>${daysRemaining}</td> <!-- Display days remaining -->
+                    <td contenteditable="true">${subscription.expiryDate || ''}</td>
+                    <td contenteditable="true">${daysSince} (${(daysSince * 2.2).toFixed(2)} GB)</td> <!-- Display duration in days and GB -->
+                    <td>
                         <button onclick="editSubscriptionLocal(${index})">Edit</button>
                         <button onclick="extendSubscriptionLocal(${index})">Extend</button>
                         <button onclick="deleteSubscriptionLocal(${index})">Delete</button>
