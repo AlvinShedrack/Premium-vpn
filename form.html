@@ -131,65 +131,14 @@
         <a href="index.html" class="back-btn">Go to Dashboard</a>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAS1gwZkFurcAvUCOHgbclc_h0OcXU8gPU",
-            authDomain: "premium-vpn-8fbbb.firebaseapp.com",
-            databaseURL: "https://premium-vpn-8fbbb-default-rtdb.firebaseio.com",
-            projectId: "premium-vpn-8fbbb",
-            storageBucket: "premium-vpn-8fbbb.firebasestorage.app",
-            messagingSenderId: "399953657460",
-            appId: "1:399953657460:web:5731e9396cd8b7d6665b21"
-        };
-
-        const remoteSyncEnabled = Boolean(
-            firebaseConfig.apiKey &&
-            firebaseConfig.databaseURL &&
-            firebaseConfig.apiKey !== "YOUR_API_KEY" &&
-            firebaseConfig.databaseURL !== "YOUR_DATABASE_URL"
-        );
-        let firebaseDatabase = null;
-
-        function initDatabase() {
-            if (!remoteSyncEnabled) return;
-            try {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                firebaseDatabase = firebase.database();
-            } catch (error) {
-                console.error("Firebase initialization error:", error);
-            }
-        }
-
-        const localSubscriptionsKey = getDeviceStorageKey("vpnSubscriptions");
-
-        function getDeviceStorageKey(baseKey) {
-            let deviceId = localStorage.getItem("vpnDeviceId");
-            if (!deviceId) {
-                deviceId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-                localStorage.setItem("vpnDeviceId", deviceId);
-            }
-            return `${baseKey}-${deviceId}`;
-        }
+        const localSubscriptionsKey = "vpnSubscriptions";
 
         function getStoredSubscriptions() {
             return JSON.parse(localStorage.getItem(localSubscriptionsKey) || '[]');
         }
 
         function saveStoredSubscriptions(subscriptions) {
-            if (remoteSyncEnabled && firebaseDatabase) {
-                const updates = {};
-                subscriptions.forEach((subscription) => {
-                    const { id, ...value } = subscription;
-                    const updateId = id || firebaseDatabase.ref('vpnSubscriptions').push().key;
-                    updates[updateId] = value;
-                });
-                firebaseDatabase.ref('vpnSubscriptions').set(updates);
-                return;
-            }
             localStorage.setItem(localSubscriptionsKey, JSON.stringify(subscriptions));
         }
 
@@ -212,6 +161,8 @@
             const subscriptionDate = document.getElementById("subscriptionDate").value;
             const subscriptionDuration = document.getElementById("subscriptionDuration").value;
 
+            console.log("Adding Subscription:", userName, subscriptionDate, subscriptionDuration);
+
             if (!userName || !subscriptionDate || !subscriptionDuration) {
                 alert("Please fill out all fields.");
                 return;
@@ -228,25 +179,6 @@
                 daysRemaining: daysRemaining
             };
 
-            if (remoteSyncEnabled && firebaseDatabase) {
-                const newRef = firebaseDatabase.ref('vpnSubscriptions').push();
-                newRef.set(subscription)
-                    .then(() => {
-                        alert("Subscription Added!");
-                        window.location.href = "index.html";
-                    })
-                    .catch((error) => {
-                        console.error("Firebase save error:", error);
-                        alert("Failed to save subscription: " + error.message);
-                    });
-                return;
-            }
-
-            if (remoteSyncEnabled && !firebaseDatabase) {
-                alert("Firebase not initialized. Try refreshing the page.");
-                return;
-            }
-
             const existing = getStoredSubscriptions();
             existing.push(subscription);
             saveStoredSubscriptions(existing);
@@ -254,10 +186,6 @@
             alert("Subscription Added!");
             window.location.href = "index.html";
         }
-
-        window.addEventListener('load', function() {
-            initDatabase();
-        });
     </script>
 
     <!-- Footer Section -->
