@@ -236,9 +236,6 @@ table th:first-child, table td:first-child {
             const tableBody = document.querySelector("#subscriptionTable tbody");
             tableBody.innerHTML = "";
 
-            // Reorder subscriptions based on the current sort column
-            subscriptions = sortSubscriptions(subscriptions, currentSortColumn);
-
             subscriptions.forEach((subscription, index) => {
                 const row = document.createElement("tr");
                 const daysRemaining = calculateDaysRemaining(subscription.expiryDate);
@@ -261,15 +258,34 @@ table th:first-child, table td:first-child {
         }
 
         function loadSubscriptions() {
-            const subscriptions = getStoredSubscriptions();
-            renderSubscriptions(subscriptions);
+            let subscriptions = getStoredSubscriptions();
+            if (subscriptions.length === 0) {
+                // Try to load from JSON file
+                fetch('vpn-subscriptions.json')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            saveStoredSubscriptions(data);
+                            renderSubscriptions(data);
+                            sortTable(2); // Sort after loading
+                        } else {
+                            renderSubscriptions(subscriptions);
+                        }
+                    })
+                    .catch(err => {
+                        console.log('No JSON data or error loading:', err);
+                        renderSubscriptions(subscriptions);
+                    });
+            } else {
+                renderSubscriptions(subscriptions);
+            }
         }
 
         // Function to handle sorting by column
         function sortTable(columnIndex) {
             const subscriptions = getStoredSubscriptions();
             currentSortColumn = columnIndex; // Set the current column being sorted
-            isAscending = !isAscending; // Toggle the sorting order
+            isAscending = !isAscending; // Toggle the sorting order (ascending/descending)
 
             subscriptions.sort((a, b) => {
                 const aValue = getColumnValue(a, columnIndex);
@@ -354,6 +370,7 @@ table th:first-child, table td:first-child {
         window.addEventListener('load', function() {
             loadTheme();
             loadSubscriptions();
+            sortTable(2);  // Sort by 'Days Remaining' column (default sorting)
         });
     </script>
 
