@@ -60,6 +60,8 @@ body {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            user-select: none;
         }
 
         table th {
@@ -68,7 +70,6 @@ body {
             position: sticky;
             top: 0;
             z-index: 1; /* Ensures header stays on top */
-            cursor: pointer;
         }
 
         table td {
@@ -94,6 +95,11 @@ table th:first-child, table td:first-child {
     background-color: var(--row-background-light);
     z-index: 2; /* Keep sticky column on top */
 }
+
+        /* Dark mode sticky column */
+        [data-theme="dark"] table th:first-child, [data-theme="dark"] table td:first-child {
+            background-color: var(--row-background-dark);
+        }
 
         .back-btn {
             display: block;
@@ -173,6 +179,16 @@ table th:first-child, table td:first-child {
             padding: 10px;
             border-radius: 4px;
             cursor: pointer;
+        }
+
+        /* Row Highlight */
+        .highlight-row td {
+            background-color: #ddd !important; /* More visible light gray to highlight the row */
+        }
+
+        /* Dark mode highlight */
+        [data-theme="dark"] .highlight-row td {
+            background-color: #999 !important; /* Brighter gray for dark mode */
         }
     </style>
 </head>
@@ -255,48 +271,32 @@ table th:first-child, table td:first-child {
                 const daysSince = calculateDaysSinceSubscription(subscription.subscriptionDate); // Calculate days since subscription
 
                 row.innerHTML = `
-                    <td contenteditable="true">${subscription.userName || ''}</td>
-                    <td contenteditable="true">${subscription.subscriptionDate || ''}</td>
+                    <td>${subscription.userName || ''}</td>
+                    <td>${subscription.subscriptionDate || ''}</td>
                     <td>${daysRemaining}</td> <!-- Display days remaining -->
-                    <td contenteditable="true">${subscription.expiryDate || ''}</td>
-                    <td contenteditable="true">${daysSince} (${(daysSince * 2.2).toFixed(2)} GB)</td> <!-- Display duration in days and GB -->
+                    <td>${subscription.expiryDate || ''}</td>
+                    <td>${daysSince} (${(daysSince * 2.2).toFixed(2)} GB)</td> <!-- Display duration in days and GB -->
                     <td>
                         <button onclick="editSubscriptionLocal(${index})">Edit</button>
                         <button onclick="extendSubscriptionLocal(${index})">Extend</button>
                         <button onclick="deleteSubscriptionLocal(${index})">Delete</button>
                     </td>
                 `;
+
+                // Add click event to highlight the row when clicked
+                row.addEventListener('click', function () {
+                    const rows = document.querySelectorAll('tr');
+                    rows.forEach(row => row.classList.remove('highlight-row'));
+                    row.classList.add('highlight-row');
+                });
+
                 tableBody.appendChild(row);
             });
         }
 
         function loadSubscriptions() {
             const subscriptions = getStoredSubscriptions();
-            if (subscriptions.length > 0) {
-                renderSubscriptions(subscriptions);
-                return;
-            }
-
-            if (window.location.protocol === 'file:') {
-                // Local file previews can block fetch requests for local JSON.
-                renderSubscriptions([]);
-                return;
-            }
-
-            fetch('vpn-subscriptions.json')
-                .then(response => response.json())
-                .then(data => {
-                    if (Array.isArray(data) && data.length > 0) {
-                        saveStoredSubscriptions(data);
-                        renderSubscriptions(data);
-                    } else {
-                        renderSubscriptions([]);
-                    }
-                })
-                .catch(err => {
-                    console.error('Could not load subscriptions JSON:', err);
-                    renderSubscriptions([]);
-                });
+            renderSubscriptions(subscriptions);
         }
 
         // Function to handle sorting by column
