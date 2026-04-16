@@ -68,6 +68,7 @@ body {
             position: sticky;
             top: 0;
             z-index: 1; /* Ensures header stays on top */
+            cursor: pointer;
         }
 
         table td {
@@ -170,11 +171,11 @@ table th:first-child, table td:first-child {
         <table id="subscriptionTable">
             <thead>
                 <tr>
-                    <th>User Name</th>
-                    <th>Initial Subscription Date</th>
-                    <th>Days Remaining</th>
-                    <th>Expiry Date</th>
-                    <th>Total Duration (Days)</th>
+                    <th onclick="sortTable(0)">User Name</th>
+                    <th onclick="sortTable(1)">Initial Subscription Date</th>
+                    <th onclick="sortTable(2)">Days Remaining</th>
+                    <th onclick="sortTable(3)">Expiry Date</th>
+                    <th onclick="sortTable(4)">Total Duration (Days)</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -184,11 +185,13 @@ table th:first-child, table td:first-child {
         </table>
     </div>
 
-    <!-- Dark Mode Toggle Button -->
+    <!-- Dark Mode Toggle Button --> 
 
 
     <script>
         const localSubscriptionsKey = "vpnSubscriptions";
+        let currentSortColumn = 2; // Default sort by 'Days Remaining'
+        let isAscending = true; // Ascending order by default
 
         function getStoredSubscriptions() {
             return JSON.parse(localStorage.getItem(localSubscriptionsKey) || '[]');
@@ -214,7 +217,7 @@ table th:first-child, table td:first-child {
 
             const expiry = new Date(expiryDate);
             const diffInTime = expiry.getTime() - today.getTime();
-            const daysRemaining = Math.ceil(diffInTime / (1000 * 3600 * 24))-1;
+            const daysRemaining = Math.ceil(diffInTime / (1000 * 3600 * 24)) - 1;
 
             // Ensure we exclude today (so if today is the expiry date, 0 days remain)
             return daysRemaining > 0 ? daysRemaining : 0;
@@ -233,8 +236,8 @@ table th:first-child, table td:first-child {
             const tableBody = document.querySelector("#subscriptionTable tbody");
             tableBody.innerHTML = "";
 
-            // Reorder subscriptions based on days remaining
-            subscriptions = reorderSubscriptionsByDaysRemaining(subscriptions);
+            // Reorder subscriptions based on the current sort column
+            subscriptions = sortSubscriptions(subscriptions, currentSortColumn);
 
             subscriptions.forEach((subscription, index) => {
                 const row = document.createElement("tr");
@@ -246,7 +249,7 @@ table th:first-child, table td:first-child {
                     <td contenteditable="true">${subscription.subscriptionDate || ''}</td>
                     <td>${daysRemaining}</td> <!-- Display days remaining -->
                     <td contenteditable="true">${subscription.expiryDate || ''}</td>
-                    <td contenteditable="true">${daysSince}</td> <!-- Display duration since subscription in days -->
+                    <td contenteditable="true">${daysSince} (${(daysSince * 2.2).toFixed(2)} GB)</td> <!-- Display duration in days and GB -->
                     <td>
                         <button onclick="editSubscriptionLocal(${index})">Edit</button>
                         <button onclick="extendSubscriptionLocal(${index})">Extend</button>
@@ -260,6 +263,37 @@ table th:first-child, table td:first-child {
         function loadSubscriptions() {
             const subscriptions = getStoredSubscriptions();
             renderSubscriptions(subscriptions);
+        }
+
+        // Function to handle sorting by column
+        function sortTable(columnIndex) {
+            const subscriptions = getStoredSubscriptions();
+            currentSortColumn = columnIndex; // Set the current column being sorted
+            isAscending = !isAscending; // Toggle the sorting order
+
+            subscriptions.sort((a, b) => {
+                const aValue = getColumnValue(a, columnIndex);
+                const bValue = getColumnValue(b, columnIndex);
+
+                if (aValue < bValue) return isAscending ? -1 : 1;
+                if (aValue > bValue) return isAscending ? 1 : -1;
+                return 0;
+            });
+
+            saveStoredSubscriptions(subscriptions);
+            renderSubscriptions(subscriptions);
+        }
+
+        // Function to get the value of a specific column for sorting
+        function getColumnValue(subscription, columnIndex) {
+            switch (columnIndex) {
+                case 0: return subscription.userName || ''; // User Name
+                case 1: return subscription.subscriptionDate || ''; // Subscription Date
+                case 2: return calculateDaysRemaining(subscription.expiryDate); // Days Remaining
+                case 3: return subscription.expiryDate || ''; // Expiry Date
+                case 4: return calculateDaysSinceSubscription(subscription.subscriptionDate); // Total Duration in Days
+                default: return '';
+            }
         }
 
         function editSubscriptionLocal(index) {
@@ -308,17 +342,6 @@ table th:first-child, table td:first-child {
             saveStoredSubscriptions(subscriptions);
             alert("Subscription deleted!");
             loadSubscriptions();
-        }
-
-        function toggleDarkMode() {
-            const currentTheme = document.body.getAttribute('data-theme');
-            if (currentTheme === 'dark') {
-                document.body.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-            } else {
-                document.body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-            }
         }
 
         function loadTheme() {
