@@ -200,6 +200,7 @@ table th:first-child, table td:first-child {
         <table id="subscriptionTable">
             <thead>
                 <tr>
+                    <th>No.</th> <!-- Add this column to the header -->
                     <th onclick="sortTable(0)">User Name</th>
                     <th onclick="sortTable(1)">Initial Subscription Date</th>
                     <th onclick="sortTable(2)">Days Remaining</th>
@@ -271,6 +272,7 @@ table th:first-child, table td:first-child {
                 const daysSince = calculateDaysSinceSubscription(subscription.subscriptionDate); // Calculate days since subscription
 
                 row.innerHTML = `
+                    <td>${index + 1}</td> <!-- Fixed No. column -->
                     <td>${subscription.userName || ''}</td>
                     <td>${subscription.subscriptionDate || ''}</td>
                     <td>${daysRemaining}</td> <!-- Display days remaining -->
