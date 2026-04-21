@@ -4,193 +4,206 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subscription Dashboard</title>
-    <style>
-        /* Default Light Mode Styles */
-        :root {
-            --background-color: #f4f7fa;
-            --text-color: #333;
-            --button-background: #4CAF50;
-            --button-color: white;
-            --header-color: #4CAF50;
-            --footer-background: #4CAF50;
-            --footer-text-color: white;
-            --row-background-light: #fff;
-            --row-background-dark: #333;
-            --row-hover-light: #f1f1f1;
-            --row-hover-dark: #555;
-        }
-
-        /* Dark Mode Styles */
-        [data-theme="dark"] {
-            --background-color: #121212;
-            --text-color: #f4f4f4;
-            --button-background: #1e1e1e;
-            --button-color: #4CAF50;
-            --header-color: #4CAF50;
-            --footer-background: #1e1e1e;
-            --footer-text-color: white;
-            --row-background-light: #444;
-            --row-background-dark: #555;
-            --row-hover-light: #555;
-            --row-hover-dark: #777;
-        }
-
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    margin: 0;
-    padding-bottom: 140px; /* Add extra padding at the bottom */
-    transition: background-color 0.3s, color 0.3s;
-}
-
-        h1 {
-            color: var(--header-color);
-            text-align: center;
-        }
-
-        table {
-            width: 100%;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            border-collapse: collapse;
-        }
-
-        table th, table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        table th {
-            background-color: var(--header-color);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 1; /* Ensures header stays on top */
-        }
-
-        table td {
-            background-color: var(--row-background-light);
-        }
-
-        table tr:hover {
-            background-color: var(--row-hover-light);
-        }
-
-        /* Dark mode table row styles */
-        [data-theme="dark"] table td {
-            background-color: var(--row-background-dark);
-        }
-
-        [data-theme="dark"] table tr:hover {
-            background-color: var(--row-hover-dark);
-        }
-
-table th:first-child, table td:first-child {
-    position: sticky;
-    left: 0;
-    background-color: var(--row-background-light);
-    z-index: 2; /* Keep sticky column on top */
-}
-
-        /* Dark mode sticky column */
-        [data-theme="dark"] table th:first-child, [data-theme="dark"] table td:first-child {
-            background-color: var(--row-background-dark);
-        }
-
-        .back-btn {
-            display: block;
-            margin-top: 20px;
-            text-align: center;
-            color: var(--header-color);
-            text-decoration: none;
-        }
-
-        .back-btn:hover {
-            text-decoration: underline;
-        }
-
-.table-wrapper {
-    overflow-x: auto;
-    margin-top: 20px;
-    margin-bottom: 60px; /* Add space for footer */
-}
-
-        table {
-            min-width: 760px;
-        }
-
-        /* Mobile Styling for Table */
-@media (max-width: 600px) {
-    /* Expand the Expiry Date column */
-    table th:nth-child(4), table td:nth-child(4) {
-        width: 150px; /* Adjust width for mobile view */
+<style>
+    /* Default Light Mode Styles */
+    :root {
+        --background-color: #f4f7fa;
+        --text-color: #333;
+        --button-background: #4CAF50;
+        --button-color: white;
+        --header-color: #4CAF50;
+        --footer-background: #4CAF50;
+        --footer-text-color: white;
+        --row-background-light: #fff;
+        --row-background-dark: #333;
+        --row-hover-light: #f1f1f1;
+        --row-hover-dark: #555;
     }
 
-    /* Actions column buttons displayed in one line */
-    table td:last-child {
-        display: flex;
-        justify-content: space-between;
-        gap: 5px; /* Add space between buttons */
+    /* Dark Mode Styles */
+    [data-theme="dark"] {
+        --background-color: #121212;
+        --text-color: #f4f4f4;
+        --button-background: #1e1e1e;
+        --button-color: #4CAF50;
+        --header-color: #4CAF50;
+        --footer-background: #1e1e1e;
+        --footer-text-color: white;
+        --row-background-light: #444;
+        --row-background-dark: #555;
+        --row-hover-light: #555;
+        --row-hover-dark: #777;
     }
 
-    /* Ensure the total duration is on a single line */
-    table td:nth-child(5) {
-        white-space: nowrap; /* Prevent text from wrapping */
-        overflow: hidden;
-        text-overflow: ellipsis;
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        margin: 0;
+        padding-bottom: 140px; /* Add extra padding at the bottom */
+        transition: background-color 0.3s, color 0.3s;
     }
 
-    /* Make Actions column buttons appear in one line */
-    table td:last-child button {
-        flex-grow: 1; /* Ensure buttons take up available space */
+    h1 {
+        color: var(--header-color);
+        text-align: center;
     }
 
-    /* Make table text smaller and more compact for mobile */
+    table {
+        width: 100%;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        border-collapse: collapse;
+    }
+
     table th, table td {
-        padding: 8px;
-        font-size: 12px;
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        cursor: pointer;
+        user-select: none;
     }
-}
 
-        /* Footer Styling */
-        footer {
-            background-color: var(--footer-background);
-            color: var(--footer-text-color);
-            text-align: center;
-            padding: 3px;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
-            z-index: 100; /* Ensure the footer is above the sticky column */
+    table th {
+        background-color: var(--header-color);
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1; /* Ensures header stays on top */
+    }
+
+    table td {
+        background-color: var(--row-background-light);
+    }
+
+    table tr:hover {
+        background-color: var(--row-hover-light);
+    }
+
+    /* Dark mode table row styles */
+    [data-theme="dark"] table td {
+        background-color: var(--row-background-dark);
+    }
+
+    [data-theme="dark"] table tr:hover {
+        background-color: var(--row-hover-dark);
+    }
+
+    /* Freeze the first column */
+    table th:first-child, table td:first-child {
+        position: sticky;
+        left: 0;
+        background-color: var(--row-background-light);
+        z-index: 2; /* Keep sticky column on top */
+    }
+
+    /* Freeze the second column (account for first column width) */
+    table th:nth-child(2), table td:nth-child(2) {
+        position: sticky;
+        left: 10px; /* Adjust this value to match the width of the first column */
+        background-color: var(--row-background-light);
+        z-index: 1; /* Keep sticky column on top */
+    }
+
+    .back-btn {
+        display: block;
+        margin-top: 20px;
+        text-align: center;
+        color: var(--header-color);
+        text-decoration: none;
+    }
+
+    .back-btn:hover {
+        text-decoration: underline;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        margin-top: 20px;
+        margin-bottom: 60px; /* Add space for footer */
+    }
+
+    table {
+        min-width: 760px;
+    }
+
+    /* Mobile Styling for Table */
+    @media (max-width: 600px) {
+        /* Expand the Expiry Date column */
+        table th:nth-child(4), table td:nth-child(4) {
+            width: 150px; /* Adjust width for mobile view */
         }
 
-        /* Dark Mode Toggle */
-        .dark-mode-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: var(--button-background);
-            color: var(--button-color);
-            border: none;
-            padding: 10px;
-            border-radius: 4px;
-            cursor: pointer;
+        /* Actions column buttons displayed in one line */
+        table td:last-child {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px; /* Add space between buttons */
         }
 
-        /* Row Highlight */
-        .highlight-row td {
-            background-color: #ddd !important; /* More visible light gray to highlight the row */
+        /* Ensure the total duration is on a single line */
+        table td:nth-child(5) {
+            white-space: nowrap; /* Prevent text from wrapping */
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* Dark mode highlight */
-        [data-theme="dark"] .highlight-row td {
-            background-color: #999 !important; /* Brighter gray for dark mode */
+        /* Make Actions column buttons appear in one line */
+        table td:last-child button {
+            flex-grow: 1; /* Ensure buttons take up available space */
         }
-    </style>
+
+        /* Make table text smaller and more compact for mobile */
+        table th, table td {
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        /* Adjust mobile view for the first two columns for proper freezing */
+        table th:first-child, table td:first-child {
+            left: 0 !important;
+        }
+
+        table th:nth-child(2), table td:nth-child(2) {
+            left: 120px !important; /* Adjust for mobile */
+        }
+    }
+
+    /* Footer Styling */
+    footer {
+        background-color: var(--footer-background);
+        color: var(--footer-text-color);
+        text-align: center;
+        padding: 3px;
+        position: fixed;
+        width: 100%;
+        bottom: 0;
+        z-index: 100; /* Ensure the footer is above the sticky column */
+    }
+
+    /* Dark Mode Toggle */
+    .dark-mode-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: var(--button-background);
+        color: var(--button-color);
+        border: none;
+        padding: 10px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    /* Row Highlight */
+    .highlight-row td {
+        background-color: #ddd !important; /* More visible light gray to highlight the row */
+    }
+
+    /* Dark mode highlight */
+    [data-theme="dark"] .highlight-row td {
+        background-color: #999 !important; /* Brighter gray for dark mode */
+    }
+</style>
 </head>
 <body data-theme="dark">
 
