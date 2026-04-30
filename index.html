@@ -105,8 +105,8 @@
         z-index: 2; /* Keep sticky column on top */
     }
 
-    table th:nth-child(5), table td:nth-child(5) {
-    width: 1px; /* Adjust this value to make the 'Days Remaining' column smaller */
+    table th:nth-child(4), table td:nth-child(4) {
+    width: 10px; /* Adjust this value to make the 'Days Remaining' column smaller */
 }
 
     .back-btn {
@@ -198,6 +198,21 @@
         cursor: pointer;
     }
 
+    /* Data Export/Import Buttons */
+    .data-btn {
+        background-color: var(--button-background);
+        color: var(--button-color);
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+
+    .data-btn:hover {
+        opacity: 0.8;
+    }
+
     /* Row Highlight */
     .highlight-row td {
         background-color: #ddd !important; /* More visible light gray to highlight the row */
@@ -213,6 +228,9 @@
 
     <h1>Premium VPN Subscription Dashboard</h1>
     <a href="form.html" class="back-btn">Add Subscriber</a>
+    <button id="exportBtn" class="data-btn">Export Data</button>
+    <button id="importBtn" class="data-btn">Import Data</button>
+    <input type="file" id="importFile" style="display:none" accept=".json">
     <div class="table-wrapper">
         <table id="subscriptionTable">
             <thead>
@@ -408,6 +426,41 @@
             loadTheme();
             loadSubscriptions();
             sortTable(2);  // Sort by 'Days Remaining' column (default sorting)
+
+            // Export Data
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                const data = getStoredSubscriptions();
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'vpn-subscriptions.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Import Data
+            document.getElementById('importBtn').addEventListener('click', () => {
+                document.getElementById('importFile').click();
+            });
+
+            document.getElementById('importFile').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            saveStoredSubscriptions(data);
+                            loadSubscriptions();
+                            alert('Data imported successfully!');
+                        } catch (error) {
+                            alert('Invalid JSON file.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
         });
     </script>
 
